@@ -8,8 +8,8 @@ from app.models.responses import TriageResponse
 client = TestClient(app)
 
 VALID_PAYLOAD = {
-    "log": "ERROR database connection refused",
-    "metadata": {"service": "payment-service", "environment": "production"},
+    "log": "Database connection timeout after 30 seconds",
+    "metadata": {"service": "payments", "environment": "production"},
 }
 
 
@@ -26,8 +26,8 @@ def test_triage_success():
     assert body == {
         "category": "database",
         "severity": "high",
-        "likely_cause": "Database connection refused",
-        "suggested_next_step": "Verify database availability and network connectivity",
+        "likely_cause": "Database connection pool exhaustion",
+        "suggested_next_step": "Inspect active connections and pool utilization",
     }
     TriageResponse.model_validate(body)
 
