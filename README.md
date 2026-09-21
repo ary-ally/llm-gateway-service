@@ -1,12 +1,11 @@
 # Aegis Core — LLM Gateway Service
 
-A FastAPI service that will triage infrastructure logs using LLM providers
-behind a provider abstraction (Anthropic and OpenAI, with retries, fallback,
-structured output and streaming added in later tasks).
+A FastAPI service exposing an API for triaging infrastructure logs.
 
-> **Status:** the API contract is defined and validated. `POST /triage`
-> currently returns a **deterministic mock response**. Real LLM provider
-> integration is introduced in later tasks.
+> **Status:** the API contract (T02) is implemented. `POST /triage` currently
+> returns a **deterministic mock response**; no LLM provider is called yet.
+
+Requires Python 3.11+.
 
 ## Project structure
 
@@ -45,13 +44,7 @@ python -m pytest
 
 ## API
 
-### Health
-
-```http
-GET /health
-```
-
-Response:
+### `GET /health`
 
 ```json
 {
@@ -59,7 +52,7 @@ Response:
 }
 ```
 
-### Triage
+### `POST /triage`
 
 ```http
 POST /triage
@@ -70,9 +63,9 @@ Request:
 
 ```json
 {
-  "log": "ERROR database connection refused",
+  "log": "Database connection timeout after 30 seconds",
   "metadata": {
-    "service": "payment-service",
+    "service": "payments",
     "environment": "production"
   }
 }
@@ -84,8 +77,8 @@ Response (`200 OK`):
 {
   "category": "database",
   "severity": "high",
-  "likely_cause": "Database connection refused",
-  "suggested_next_step": "Verify database availability and network connectivity"
+  "likely_cause": "Database connection pool exhaustion",
+  "suggested_next_step": "Inspect active connections and pool utilization"
 }
 ```
 
@@ -93,13 +86,13 @@ Response (`200 OK`):
 
 | Field      | Required | Rules |
 |------------|----------|-------|
-| `log`      | yes      | String, 1–10,000 characters, must not be empty or whitespace-only. Never truncated. |
-| `metadata` | no       | Object of string keys to string values. At most 10 entries; keys 1–64 characters, values up to 256 characters. |
+| `log`      | yes      | String, 1–10,000 characters; empty and whitespace-only values are rejected. Never truncated or modified. |
+| `metadata` | no       | Object with string keys and string values. At most 10 entries; keys 1–64 characters; values up to 256 characters. |
 
 Unknown fields in the request body are rejected.
 
-The 10,000-character log limit keeps future prompt size, cost and latency
-bounded while still fitting a typical stack trace or log excerpt.
+The 10,000-character limit fits a typical stack trace or log excerpt while
+keeping request size bounded.
 
 #### Response fields
 
@@ -110,30 +103,12 @@ bounded while still fitting a typical stack trace or log excerpt.
 | `likely_cause`        | string | Non-empty. |
 | `suggested_next_step` | string | Non-empty. |
 
-#### Validation behavior
+#### Validation
 
 Invalid requests return `422 Unprocessable Entity` with FastAPI's standard
-error body, for example:
+error body. The default error body echoes the offending input.
 
-```json
-{
-  "detail": [
-    {
-      "type": "missing",
-      "loc": ["body", "log"],
-      "msg": "Field required",
-      "input": {}
-    }
-  ]
-}
-```
+#### Current behavior
 
-Validation happens before any handler logic runs, so invalid input will never
-reach an LLM provider. Note that the default 422 body echoes the offending
-input back to the caller.
-
-#### Current mock behavior
-
-Every valid `POST /triage` request returns the same fixed response shown above.
-The mock is built with `TriageResponse`, so it passes the same validation that
-real LLM output will pass later. The request payload is not logged or stored.
+Every valid request returns the fixed mock response shown above. The request
+payload is not logged or stored.

@@ -5,12 +5,12 @@ LLM-generated JSON can later be validated with
 `TriageResponse.model_validate_json(...)`.
 """
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -28,8 +28,8 @@ class TriageResponse(BaseModel):
                 {
                     "category": "database",
                     "severity": "high",
-                    "likely_cause": "Database connection refused",
-                    "suggested_next_step": "Verify database availability and network connectivity",
+                    "likely_cause": "Database connection pool exhaustion",
+                    "suggested_next_step": "Inspect active connections and pool utilization",
                 }
             ]
         },

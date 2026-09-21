@@ -22,8 +22,8 @@ def _mock_triage_response() -> TriageResponse:
     return TriageResponse(
         category="database",
         severity=Severity.HIGH,
-        likely_cause="Database connection refused",
-        suggested_next_step="Verify database availability and network connectivity",
+        likely_cause="Database connection pool exhaustion",
+        suggested_next_step="Inspect active connections and pool utilization",
     )
 
 

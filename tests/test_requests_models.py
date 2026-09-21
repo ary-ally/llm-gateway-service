@@ -47,6 +47,9 @@ def test_valid_metadata():
     assert TriageRequest(log="x", metadata={}).metadata == {}
     assert TriageRequest(log="x", metadata={"service": "api"}).metadata == {"service": "api"}
 
+def test_metadata_omitted():
+    request = TriageRequest(log="Database connection timeout after 30 seconds")
+    assert request.metadata is None
 
 @pytest.mark.parametrize(
     "metadata",
